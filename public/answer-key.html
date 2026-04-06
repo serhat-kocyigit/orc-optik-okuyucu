@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cevap Anahtarı | A-VIO OMR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .exam-info {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .exam-info h2 {
+            margin-bottom: 0.5rem;
+        }
+        .exam-info p {
+            color: var(--text-muted);
+        }
+        .answer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .answer-item {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .question-num {
+            font-weight: 700;
+            color: var(--primary);
+            min-width: 2rem;
+        }
+        .option-group {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+        }
+        .option-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+        .option-btn.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        .points-input {
+            width: 4rem;
+            padding: 0.5rem;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-main);
+            text-align: center;
+        }
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            position: sticky;
+            bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .btn-warning {
+            background: #f59e0b;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        .bulk-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--glass);
+            border-radius: 0.75rem;
+            align-items: center;
+        }
+        .bulk-actions label {
+            color: var(--text-muted);
+        }
+        .bulk-actions select, .bulk-actions input {
+            padding: 0.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-main);
+        }
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .back-link:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-eye"></i>
+            <span>A-VIO OMR</span>
+        </div>
+        <a href="exams.html" class="btn-sm btn-secondary-sm" style="text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Sınavlara Dön
+        </a>
+    </header>
+
+    <main class="main-container" style="grid-template-columns: 1fr;">
+        <div style="width: 100%; max-width: 1200px; margin: 0 auto;">
+            <a href="exams.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Geri
+            </a>
+
+            <div class="exam-info" id="exam-info">
+                <h2 id="exam-name">Yükleniyor...</h2>
+                <p id="exam-details"></p>
+            </div>
+
+            <div class="bulk-actions">
+                <label>Seri Cevap:</label>
+                <select id="bulk-option">
+                    <option value="">Seçiniz</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                </select>
+                <label>Aralık:</label>
+                <input type="number" id="bulk-start" placeholder="Başlangıç" min="1" style="width: 5rem;">
+                <span>-</span>
+                <input type="number" id="bulk-end" placeholder="Bitiş" min="1" style="width: 5rem;">
+                <button class="btn-sm btn-secondary-sm" onclick="applyBulk()">
+                    <i class="fas fa-magic"></i> Uygula
+                </button>
+                <button class="btn-sm btn-secondary-sm" onclick="setAllPoints()">
+                    <i class="fas fa-calculator"></i> Tüm Puanlar
+                </button>
+            </div>
+
+            <div class="answer-grid" id="answer-grid">
+                <!-- Cevaplar buraya yüklenecek -->
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-warning" onclick="clearAll()">
+                    <i class="fas fa-trash"></i> Temizle
+                </button>
+                <button class="btn btn-success" onclick="saveAnswerKey()">
+                    <i class="fas fa-save"></i> Cevap Anahtarını Kaydet
+                </button>
+                <a href="#" id="scan-link" class="btn btn-primary">
+                    <i class="fas fa-camera"></i> Optik Oku
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('examId');
+        let exam = null;
+        let answers = [];
+
+        if (!examId) {
+            alert('Sınav ID bulunamadı!');
+            window.location.href = 'exams.html';
+        }
+
+        async function loadExam() {
+            try {
+                const response = await fetch(`/api/exams/${examId}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    alert('Sınav bulunamadı!');
+                    window.location.href = 'exams.html';
+                    return;
+                }
+                
+                exam = data.exam;
+                document.getElementById('exam-name').textContent = exam.exam_name;
+                document.getElementById('exam-details').textContent = 
+                    `${exam.question_count} Soru | Doğru: ${exam.correct_points} puan | Yanlış: ${exam.wrong_points} puan | Boş: ${exam.empty_points} puan`;
+                document.getElementById('scan-link').href = `scan.html?examId=${examId}`;
+                
+                // Load existing answer key
+                if (data.answerKeys && data.answerKeys.length > 0) {
+                    answers = data.answerKeys.map(ak => ({
+                        questionNumber: ak.question_number,
+                        answer: ak.correct_answer,
+                        points: ak.points
+                    }));
+                } else {
+                    // Create empty answers
+                    answers = Array.from({ length: exam.question_count }, (_, i) => ({
+                        questionNumber: i + 1,
+                        answer: '',
+                        points: exam.correct_points
+                    }));
+                }
+                
+                renderAnswerGrid();
+            } catch (error) {
+                console.error('Error loading exam:', error);
+            }
+        }
+
+        function renderAnswerGrid() {
+            const grid = document.getElementById('answer-grid');
+            grid.innerHTML = answers.map((ans, idx) => `
+                <div class="answer-item">
+                    <div class="question-num">${ans.questionNumber}.</div>
+                    <div class="option-group">
+                        ${['A', 'B', 'C', 'D', 'E'].map(opt => `
+                            <button class="option-btn ${ans.answer === opt ? 'selected' : ''}" 
+                                    onclick="selectAnswer(${idx}, '${opt}')">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <input type="number" class="points-input" 
+                           value="${ans.points}" step="0.25" min="0" max="100"
+                           onchange="updatePoints(${idx}, this.value)" title="Soru Puanı">
+                </div>
+            `).join('');
+        }
+
+        function selectAnswer(index, answer) {
+            answers[index].answer = answer;
+            renderAnswerGrid();
+        }
+
+        function updatePoints(index, points) {
+            answers[index].points = parseFloat(points) || 0;
+        }
+
+        function applyBulk() {
+            const option = document.getElementById('bulk-option').value;
+            const start = parseInt(document.getElementById('bulk-start').value) || 1;
+            const end = parseInt(document.getElementById('bulk-end').value) || exam.question_count;
+            
+            if (!option) {
+                alert('Lütfen bir cevap seçin!');
+                return;
+            }
+            
+            for (let i = start - 1; i < Math.min(end, answers.length); i++) {
+                answers[i].answer = option;
+            }
+            renderAnswerGrid();
+        }
+
+        function setAllPoints() {
+            const points = prompt('Tüm sorular için puan değeri:', exam.correct_points);
+            if (points !== null) {
+                answers.forEach(a => a.points = parseFloat(points) || 0);
+                renderAnswerGrid();
+            }
+        }
+
+        function clearAll() {
+            if (!confirm('Tüm cevapları temizlemek istediğinize emin misiniz?')) return;
+            answers.forEach(a => a.answer = '');
+            renderAnswerGrid();
+        }
+
+        async function saveAnswerKey() {
+            // Check if all questions have answers
+            const emptyAnswers = answers.filter(a => !a.answer);
+            if (emptyAnswers.length > 0) {
+                if (!confirm(`${emptyAnswers.length} soru için cevap girilmemiş. Yine de kaydetmek istiyor musunuz?`)) {
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch(`/api/exams/${examId}/answer-key`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answers })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Cevap anahtarı başarıyla kaydedildi!');
+                } else {
+                    alert('Kaydetme sırasında hata oluştu!');
+                }
+            } catch (error) {
+                console.error('Error saving answer key:', error);
+                alert('Kaydetme sırasında hata oluştu!');
+            }
+        }
+
+        // Load exam on page load
+        loadExam();
+    </script>
+</body>
+</html>

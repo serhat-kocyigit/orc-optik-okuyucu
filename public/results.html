@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınav Sonuçları | A-VIO OMR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        .exam-info-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .exam-info-card h2 {
+            margin-bottom: 0.5rem;
+        }
+        .exam-info-card p {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .stat-box {
+            background: var(--glass);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-box .label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .stat-box .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .stat-box.success .value { color: #10b981; }
+        .stat-box.danger .value { color: #ef4444; }
+        .stat-box.primary .value { color: var(--primary); }
+        .results-table {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .results-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results-table th,
+        .results-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .results-table th {
+            background: var(--glass);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+        .results-table tr:hover {
+            background: var(--glass);
+        }
+        .results-table td {
+            color: var(--text-main);
+        }
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        .score-high { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .score-medium { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .score-low { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn-sm {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--glass);
+            color: var(--text-main);
+        }
+        .btn-sm:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-danger-sm:hover {
+            background: #ef4444;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            outline: none;
+            width: 200px;
+        }
+        .search-box i {
+            color: var(--text-muted);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .back-link:hover {
+            color: var(--primary);
+        }
+        .answer-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .answer-detail-modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .answer-grid-detail {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .answer-item-detail {
+            background: var(--glass);
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            text-align: center;
+        }
+        .answer-item-detail.correct {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .answer-item-detail.wrong {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-eye"></i>
+            <span>A-VIO OMR</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="scan.html?examId=${examId}" id="scan-link" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-camera"></i> Optik Oku
+            </a>
+            <a href="exams.html" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-arrow-left"></i> Sınavlara Dön
+            </a>
+        </div>
+    </header>
+
+    <main class="main-container" style="grid-template-columns: 1fr;">
+        <div style="width: 100%; max-width: 1200px; margin: 0 auto;">
+            <a href="exams.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Geri
+            </a>
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Sınav Sonuçları</h1>
+                    <p id="exam-subtitle" style="color: var(--text-muted);">Yükleniyor...</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Excel'e Aktar
+                    </button>
+                    <button class="btn btn-success" onclick="window.print()">
+                        <i class="fas fa-print"></i> Yazdır
+                    </button>
+                </div>
+            </div>
+
+            <div class="exam-info-card" id="exam-info">
+                <h2 id="exam-name">Yükleniyor...</h2>
+                <p id="exam-details"></p>
+                <div class="stats-row">
+                    <div class="stat-box primary">
+                        <div class="label">Toplam Öğrenci</div>
+                        <div class="value" id="total-students">0</div>
+                    </div>
+                    <div class="stat-box success">
+                        <div class="label">Ortalama Puan</div>
+                        <div class="value" id="avg-score">0</div>
+                    </div>
+                    <div class="stat-box primary">
+                        <div class="label">En Yüksek</div>
+                        <div class="value" id="max-score">0</div>
+                    </div>
+                    <div class="stat-box danger">
+                        <div class="label">En Düşük</div>
+                        <div class="value" id="min-score">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Öğrenci No Ara..." onkeyup="filterResults()">
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.875rem;">
+                    <i class="fas fa-info-circle"></i> Sonuçları görmek için optik form okuyun
+                </div>
+            </div>
+
+            <div class="results-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sıra</th>
+                            <th>Öğrenci No</th>
+                            <th>Doğru</th>
+                            <th>Yanlış</th>
+                            <th>Boş</th>
+                            <th>Puan</th>
+                            <th>Tarih</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody">
+                        <!-- Sonuçlar buraya yüklenecek -->
+                    </tbody>
+                </table>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>Henüz Sonuç Yok</h3>
+                    <p>Sonuç eklemek için "Optik Oku" butonuna tıklayın.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Answer Detail Modal -->
+    <div id="detail-modal" class="answer-detail-modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 id="modal-student-title">Öğrenci Detayı</h3>
+                <button class="close-btn" onclick="closeModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div id="modal-answers" class="answer-grid-detail"></div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('examId');
+        let exam = null;
+        let results = [];
+        let answerKey = [];
+
+        if (!examId) {
+            alert('Sınav ID bulunamadı!');
+            window.location.href = 'exams.html';
+        }
+
+        document.getElementById('scan-link').href = `scan.html?examId=${examId}`;
+
+        async function loadExamData() {
+            try {
+                // Load exam details
+                const examResponse = await fetch(`/api/exams/${examId}`);
+                const examData = await examResponse.json();
+                
+                if (!examData.success) {
+                    alert('Sınav bulunamadı!');
+                    window.location.href = 'exams.html';
+                    return;
+                }
+                
+                exam = examData.exam;
+                answerKey = examData.answerKeys || [];
+                
+                document.getElementById('exam-name').textContent = exam.exam_name;
+                document.getElementById('exam-subtitle').textContent = exam.exam_name;
+                document.getElementById('exam-details').textContent = 
+                    `${exam.question_count} Soru | Doğru: ${exam.correct_points}p | Yanlış: ${exam.wrong_points}p | Boş: ${exam.empty_points}p`;
+                
+                // Load results
+                await loadResults();
+            } catch (error) {
+                console.error('Error loading exam:', error);
+            }
+        }
+
+        async function loadResults() {
+            try {
+                const response = await fetch(`/api/exams/${examId}/results`);
+                const data = await response.json();
+                
+                results = data.results || [];
+                renderResults();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading results:', error);
+            }
+        }
+
+        function renderResults(filtered = results) {
+            const tbody = document.getElementById('results-tbody');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            tbody.innerHTML = filtered.map((result, index) => {
+                const scoreClass = result.total_score >= exam.correct_points * exam.question_count * 0.7 ? 'score-high' :
+                                  result.total_score >= exam.correct_points * exam.question_count * 0.5 ? 'score-medium' : 'score-low';
+                
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${result.student_number}</strong></td>
+                        <td style="color: #10b981;">${result.correct_count}</td>
+                        <td style="color: #ef4444;">${result.wrong_count}</td>
+                        <td>${result.empty_count}</td>
+                        <td><span class="score-badge ${scoreClass}">${result.total_score}</span></td>
+                        <td>${new Date(result.scanned_at).toLocaleDateString('tr-TR')}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm" onclick="showDetail(${result.id})" title="Detay">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-sm btn-danger-sm" onclick="deleteResult(${result.id})" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const total = results.length;
+            if (total === 0) {
+                document.getElementById('total-students').textContent = '0';
+                document.getElementById('avg-score').textContent = '0';
+                document.getElementById('max-score').textContent = '0';
+                document.getElementById('min-score').textContent = '0';
+                return;
+            }
+
+            const scores = results.map(r => parseFloat(r.total_score));
+            const avg = scores.reduce((a, b) => a + b, 0) / total;
+            const max = Math.max(...scores);
+            const min = Math.min(...scores);
+
+            document.getElementById('total-students').textContent = total;
+            document.getElementById('avg-score').textContent = avg.toFixed(2);
+            document.getElementById('max-score').textContent = max.toFixed(2);
+            document.getElementById('min-score').textContent = min.toFixed(2);
+        }
+
+        function filterResults() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const filtered = results.filter(r => 
+                r.student_number.toLowerCase().includes(search)
+            );
+            renderResults(filtered);
+        }
+
+        async function deleteResult(resultId) {
+            if (!confirm('Bu sonucu silmek istediğinize emin misiniz?')) return;
+            
+            try {
+                const response = await fetch(`/api/results/${resultId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadResults();
+                }
+            } catch (error) {
+                console.error('Error deleting result:', error);
+            }
+        }
+
+        function showDetail(resultId) {
+            const result = results.find(r => r.id === resultId);
+            if (!result) return;
+
+            document.getElementById('modal-student-title').textContent = 
+                `Öğrenci: ${result.student_number} - Puan: ${result.total_score}`;
+            
+            const answers = JSON.parse(result.answers || '[]');
+            const container = document.getElementById('modal-answers');
+            
+            container.innerHTML = answers.map(ans => {
+                const keyItem = answerKey.find(k => k.question_number === ans.q);
+                const correctAnswer = keyItem ? keyItem.correct_answer : null;
+                const isCorrect = ans.ans === correctAnswer;
+                const hasAnswer = !!ans.ans;
+                
+                return `
+                    <div class="answer-item-detail ${hasAnswer ? (isCorrect ? 'correct' : 'wrong') : ''}">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${ans.q}</div>
+                        <div style="font-weight: 700;">${ans.ans || '-'}</div>
+                        ${!isCorrect ? `<div style="font-size: 0.625rem; color: #10b981;">(${correctAnswer})</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('detail-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+        }
+
+        function exportToExcel() {
+            window.open(`/api/exams/${examId}/export`, '_blank');
+        }
+
+        // Close modal on outside click
+        document.getElementById('detail-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'detail-modal') closeModal();
+        });
+
+        // Load data on page load
+        loadExamData();
+    </script>
+</body>
+</html>

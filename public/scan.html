@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optik Form Oku | A-VIO OMR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .exam-banner {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .exam-banner h3 {
+            margin: 0;
+        }
+        .exam-banner p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-link:hover {
+            color: var(--primary);
+        }
+        .result-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .comparison-item {
+            background: var(--glass);
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .comparison-item.correct {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .comparison-item.wrong {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .comparison-item.empty {
+            border-color: var(--text-muted);
+            opacity: 0.7;
+        }
+        .comparison-item .q-num {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+        .comparison-item .student-ans {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .comparison-item .correct-ans {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .score-panel {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+        .score-item {
+            text-align: center;
+        }
+        .score-item .label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        .score-item .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .student-info {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .student-info h4 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        .info-row {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-item .label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .camera-container {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .camera-container.active {
+            display: flex;
+        }
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        #camera-video {
+            width: 100%;
+            border-radius: 0.75rem;
+            border: 2px solid var(--border);
+        }
+        #camera-canvas {
+            display: none;
+        }
+        .camera-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .camera-btn:hover {
+            background: #059669;
+        }
+        .upload-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .capture-btn {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 4px solid white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .capture-btn:hover {
+            background: #dc2626;
+        }
+        .info-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .btn-secondary {
+            background: var(--glass);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .no-exam-warning {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-eye"></i>
+            <span>A-VIO OMR</span>
+        </div>
+        <a href="exams.html" class="btn-sm btn-secondary-sm" style="text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Sınavlara Dön
+        </a>
+    </header>
+
+    <main class="main-container">
+        <aside class="sidebar">
+            <div class="exam-banner" id="exam-banner">
+                <div>
+                    <h3 id="exam-name">Yükleniyor...</h3>
+                    <p id="exam-details"></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Optik Form Yükle</h3>
+                <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                    Öğrenci optik formunu yükleyin veya kamerayla çekin
+                </p>
+
+                <div class="upload-tabs">
+                    <button class="tab-btn active" onclick="switchTab('file')" id="tab-file">
+                        <i class="fas fa-folder-open"></i> Dosya
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('camera')" id="tab-camera">
+                        <i class="fas fa-camera"></i> Kamera
+                    </button>
+                </div>
+
+                <!-- File Upload Tab -->
+                <div id="file-tab" class="tab-content">
+                    <div class="upload-area" id="drop-zone">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <p>Dosya Seç</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">PNG, JPG (En fazla 10MB)</p>
+                        <input type="file" id="file-input" class="hidden" accept="image/*">
+                    </div>
+                </div>
+
+                <!-- Camera Tab -->
+                <div id="camera-tab" class="tab-content camera-container">
+                    <div class="video-wrapper">
+                        <video id="camera-video" autoplay playsinline></video>
+                        <button class="capture-btn" id="capture-btn" title="Fotoğraf Çek"></button>
+                    </div>
+                    <canvas id="camera-canvas"></canvas>
+                    <button class="camera-btn" id="start-camera-btn">
+                        <i class="fas fa-video"></i> Kamerayı Başlat
+                    </button>
+                    <button class="camera-btn" id="stop-camera-btn" style="display: none; background: #ef4444;">
+                        <i class="fas fa-stop"></i> Kamerayı Durdur
+                    </button>
+                </div>
+
+                <button class="btn" id="scan-btn" disabled>
+                    <i class="fas fa-microchip"></i>
+                    ANALİZ ET
+                </button>
+
+                <div id="no-exam-warning" class="no-exam-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i> Lütfen önce bir sınav seçin!
+                </div>
+            </div>
+
+            <div class="card" id="results-meta" style="display: none;">
+                <h3>Taram Özeti</h3>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <tbody id="results-body">
+                            <tr>
+                                <td>Öğrenci No</td>
+                                <td id="res-id">-</td>
+                            </tr>
+                            <tr>
+                                <td>Okunan Soru</td>
+                                <td id="res-count">0/20</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </aside>
+
+        <section class="results-panel">
+            <div id="initial-message" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                <i class="fas fa-camera" style="font-size: 4rem; display: block; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <h3>Optik Form Okuma</h3>
+                <p>Sol taraftan öğrenci optik formunu yükleyerek başlayın.</p>
+            </div>
+
+            <div id="scan-results" style="display: none;">
+                <div class="image-preview-container">
+                    <canvas id="output-canvas" class="hidden"></canvas>
+                    <div id="welcome-msg" style="text-align: center; color: var(--text-muted);">
+                        <i class="fas fa-image" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+                        Görsel yüklediğinizde burada görünecek.
+                    </div>
+                    <div id="loader">
+                        <div class="spinner"></div>
+                        <p style="font-weight: 600; color: var(--primary);">Analiz ediliyor...</p>
+                    </div>
+                </div>
+
+                <div class="student-info" id="student-info" style="display: none;">
+                    <h4><i class="fas fa-user-graduate"></i> Öğrenci Bilgileri</h4>
+                    <div class="info-row">
+                        <div class="info-item">
+                            <span class="label">Öğrenci Numarası</span>
+                            <span class="value" id="student-id">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Toplam Puan</span>
+                            <span class="value" id="total-score" style="color: #10b981;">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="score-panel" id="score-panel" style="display: none;">
+                    <div class="score-item">
+                        <div class="label">Doğru</div>
+                        <div class="value" id="correct-count">0</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="label">Yanlış</div>
+                        <div class="value" id="wrong-count">0</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="label">Boş</div>
+                        <div class="value" id="empty-count">0</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="label">Net</div>
+                        <div class="value" id="net-score">0</div>
+                    </div>
+                </div>
+
+                <div class="card" id="comparison-card" style="display: none;">
+                    <h3 class="section-title">
+                        <i class="fas fa-check-double"></i> Cevap Karşılaştırması
+                    </h3>
+                    <div class="result-comparison" id="comparison-grid">
+                        <!-- Karşılaştırma buraya -->
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" id="save-btn" onclick="saveResult()">
+                            <i class="fas fa-save"></i> Sonucu Kaydet
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetScan()">
+                            <i class="fas fa-redo"></i> Yeni Tarama
+                        </button>
+                        <a href="results.html?examId=${examId}" class="btn btn-primary" id="results-link">
+                            <i class="fas fa-list"></i> Tüm Sonuçlar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="omr-scanner.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('examId');
+        let exam = null;
+        let answerKey = [];
+        let scanResults = null;
+        let comparisonResults = null;
+
+        if (!examId) {
+            document.getElementById('no-exam-warning').style.display = 'block';
+            document.getElementById('scan-btn').disabled = true;
+        } else {
+            document.getElementById('results-link').href = `results.html?examId=${examId}`;
+        }
+
+        async function loadExam() {
+            if (!examId) return;
+            
+            try {
+                const response = await fetch(`/api/exams/${examId}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    alert('Sınav bulunamadı!');
+                    return;
+                }
+                
+                exam = data.exam;
+                answerKey = data.answerKeys || [];
+                
+                document.getElementById('exam-name').textContent = exam.exam_name;
+                document.getElementById('exam-details').textContent = 
+                    `${exam.question_count} Soru | Doğru: ${exam.correct_points}p | Yanlış: ${exam.wrong_points}p`;
+                
+                // Check if answer key exists
+                if (answerKey.length === 0) {
+                    if (confirm('Bu sınav için cevap anahtarı oluşturulmamış. Şimdi oluşturmak ister misiniz?')) {
+                        window.location.href = `answer-key.html?examId=${examId}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading exam:', error);
+            }
+        }
+
+        function compareAnswers(studentAnswers) {
+            if (!answerKey || answerKey.length === 0) {
+                alert('Cevap anahtarı bulunamadı!');
+                return null;
+            }
+
+            // Debug: Cevap anahtarını ve sınav ayarlarını kontrol et
+            console.log('Cevap Anahtarı:', answerKey);
+            console.log('Sınav Ayarları:', exam);
+
+            let correct = 0;
+            let wrong = 0;
+            let empty = 0;
+            let totalScore = 0;
+
+            const comparison = studentAnswers.map((studentAns, idx) => {
+                const keyItem = answerKey.find(k => k.question_number === studentAns.q);
+                const correctAnswer = keyItem ? keyItem.correct_answer : null;
+                const points = keyItem ? parseFloat(keyItem.points) : parseFloat(exam.correct_points);
+                
+                // Debug
+                console.log(`Soru ${studentAns.q}: Öğrenci=${studentAns.ans}, Doğru=${correctAnswer}, Puan=${points}`);
+                
+                let status = 'empty';
+                let score = 0;
+
+                if (!studentAns.ans) {
+                    empty++;
+                    score = parseFloat(exam.empty_points) || 0;
+                } else if (studentAns.ans === correctAnswer) {
+                    correct++;
+                    status = 'correct';
+                    score = points;
+                } else {
+                    wrong++;
+                    status = 'wrong';
+                    score = parseFloat(exam.wrong_points) || 0;
+                }
+
+                totalScore += score;
+
+                return {
+                    questionNumber: studentAns.q,
+                    studentAnswer: studentAns.ans || '-',
+                    correctAnswer: correctAnswer || '-',
+                    status,
+                    points: score
+                };
+            });
+
+            console.log(`Sonuç: Doğru=${correct}, Yanlış=${wrong}, Boş=${empty}, Toplam=${totalScore}`);
+
+            return {
+                comparison,
+                correct,
+                wrong,
+                empty,
+                totalScore: parseFloat(totalScore).toFixed(2),
+                net: (correct - (wrong * Math.abs(parseFloat(exam.wrong_points)) / parseFloat(exam.correct_points))).toFixed(2)
+            };
+        }
+
+        function displayComparison(results) {
+            comparisonResults = results;
+            const grid = document.getElementById('comparison-grid');
+            
+            grid.innerHTML = results.comparison.map(item => `
+                <div class="comparison-item ${item.status}" title="Soru ${item.questionNumber}: Doğru cevap ${item.correctAnswer}">
+                    <div class="q-num">${item.questionNumber}</div>
+                    <div class="student-ans">${item.studentAnswer}</div>
+                    <div class="correct-ans">(${item.correctAnswer})</div>
+                </div>
+            `).join('');
+
+            // Update score panel
+            document.getElementById('correct-count').textContent = results.correct;
+            document.getElementById('wrong-count').textContent = results.wrong;
+            document.getElementById('empty-count').textContent = results.empty;
+            document.getElementById('net-score').textContent = results.net;
+            document.getElementById('total-score').textContent = results.totalScore;
+
+            // Show panels
+            document.getElementById('score-panel').style.display = 'grid';
+            document.getElementById('comparison-card').style.display = 'block';
+            document.getElementById('student-info').style.display = 'block';
+        }
+
+        // Override the displayResults function from OMR scanner
+        const originalDisplayResults = window.displayResults;
+        window.displayResults = function(data) {
+            scanResults = data;
+            
+            // Update student ID display
+            document.getElementById('res-id').textContent = data.studentID || '-';
+            document.getElementById('res-count').textContent = 
+                data.answers.filter(a => a.ans).length + '/' + exam?.question_count || '20';
+            document.getElementById('student-id').textContent = data.studentID || '-';
+            
+            // Show results meta
+            document.getElementById('results-meta').style.display = 'block';
+            
+            // Compare with answer key
+            if (answerKey && answerKey.length > 0) {
+                const comparison = compareAnswers(data.answers);
+                if (comparison) {
+                    displayComparison(comparison);
+                }
+            }
+
+            // Show the scan results section
+            document.getElementById('initial-message').style.display = 'none';
+            document.getElementById('scan-results').style.display = 'block';
+        };
+
+        async function saveResult() {
+            if (!scanResults || !comparisonResults) {
+                alert('Kaydedilecek sonuç yok!');
+                return;
+            }
+
+            const studentNumber = scanResults.studentID;
+            if (!studentNumber || studentNumber === '-----') {
+                alert('Geçerli bir öğrenci numarası okunamadı!');
+                return;
+            }
+
+            const saveData = {
+                studentNumber: studentNumber,
+                answers: scanResults.answers,
+                correctCount: comparisonResults.correct,
+                wrongCount: comparisonResults.wrong,
+                emptyCount: comparisonResults.empty,
+                totalScore: comparisonResults.totalScore
+            };
+
+            try {
+                const response = await fetch(`/api/exams/${examId}/results`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(saveData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Sonuç başarıyla kaydedildi!');
+                    document.getElementById('save-btn').disabled = true;
+                    document.getElementById('save-btn').innerHTML = '<i class="fas fa-check"></i> Kaydedildi';
+                } else {
+                    alert('Kaydetme sırasında hata oluştu!');
+                }
+            } catch (error) {
+                console.error('Error saving result:', error);
+                alert('Kaydetme sırasında hata oluştu!');
+            }
+        }
+
+        function resetScan() {
+            document.getElementById('scan-results').style.display = 'none';
+            document.getElementById('initial-message').style.display = 'block';
+            document.getElementById('results-meta').style.display = 'none';
+            document.getElementById('score-panel').style.display = 'none';
+            document.getElementById('comparison-card').style.display = 'none';
+            document.getElementById('student-info').style.display = 'none';
+            document.getElementById('save-btn').disabled = false;
+            document.getElementById('save-btn').innerHTML = '<i class="fas fa-save"></i> Sonucu Kaydet';
+            scanResults = null;
+            comparisonResults = null;
+            uploadedImage = null;
+            
+            // Reset canvas
+            const canvas = document.getElementById('output-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('output-canvas').classList.add('hidden');
+            document.getElementById('welcome-msg').classList.remove('hidden');
+            document.getElementById('scan-btn').disabled = true;
+        }
+
+        // ========== CAMERA FUNCTIONS ==========
+        let cameraStream = null;
+
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+
+            // Show/hide content
+            if (tab === 'file') {
+                document.getElementById('file-tab').style.display = 'block';
+                document.getElementById('camera-tab').classList.remove('active');
+                stopCamera();
+            } else {
+                document.getElementById('file-tab').style.display = 'none';
+                document.getElementById('camera-tab').classList.add('active');
+            }
+        }
+
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                const video = document.getElementById('camera-video');
+                video.srcObject = cameraStream;
+                
+                document.getElementById('start-camera-btn').style.display = 'none';
+                document.getElementById('stop-camera-btn').style.display = 'flex';
+                document.getElementById('capture-btn').style.display = 'block';
+            } catch (err) {
+                console.error('Kamera erişim hatası:', err);
+                alert('Kamera erişimine izin verilmedi veya kamera bulunamadı!');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            document.getElementById('camera-video').srcObject = null;
+            document.getElementById('start-camera-btn').style.display = 'flex';
+            document.getElementById('stop-camera-btn').style.display = 'none';
+            document.getElementById('capture-btn').style.display = 'none';
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            const outputCanvas = document.getElementById('output-canvas');
+            
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw video frame to canvas
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to image
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    
+                    // Display on output canvas
+                    const outCtx = outputCanvas.getContext('2d');
+                    outputCanvas.width = img.width;
+                    outputCanvas.height = img.height;
+                    outCtx.drawImage(img, 0, 0);
+                    
+                    // Show canvas, hide welcome
+                    document.getElementById('welcome-msg').classList.add('hidden');
+                    outputCanvas.classList.remove('hidden');
+                    document.getElementById('scan-btn').disabled = false;
+                    
+                    // Switch to file tab to show captured image
+                    switchTab('file');
+                    
+                    // Stop camera after capture
+                    stopCamera();
+                    
+                    // Release object URL
+                    URL.revokeObjectURL(url);
+                };
+                img.src = url;
+            }, 'image/jpeg', 0.9);
+        }
+
+        // Camera button event listeners
+        document.getElementById('start-camera-btn').addEventListener('click', startCamera);
+        document.getElementById('stop-camera-btn').addEventListener('click', stopCamera);
+        document.getElementById('capture-btn').addEventListener('click', capturePhoto);
+
+        // Load exam on page load
+        loadExam();
+    </script>
+</body>
+</html>

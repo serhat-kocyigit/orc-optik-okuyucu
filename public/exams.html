@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınavlarım | A-VIO OMR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        .exam-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        .exam-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+        .exam-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .exam-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        .exam-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .exam-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-inactive { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .status-completed { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .exam-meta {
+            display: flex;
+            gap: 1rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        .exam-meta i {
+            margin-right: 0.25rem;
+        }
+        .exam-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary-sm {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary-sm:hover {
+            background: var(--primary-hover);
+        }
+        .btn-secondary-sm {
+            background: var(--glass);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary-sm:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .btn-danger-sm {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        .btn-danger-sm:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .user-info {
+            text-align: right;
+        }
+        .user-name {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .user-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-eye"></i>
+            <span>A-VIO OMR</span>
+        </div>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="teacher-name">Öğretmen</div>
+                <div class="user-role">Sınav Yöneticisi</div>
+            </div>
+            <button class="btn-sm btn-secondary-sm" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Çıkış
+            </button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div style="width: 100%;">
+            <div class="page-header">
+                <h1 class="page-title">Sınavlarım</h1>
+                <button class="btn" onclick="openModal()">
+                    <i class="fas fa-plus"></i> Yeni Sınav Oluştur
+                </button>
+            </div>
+
+            <div id="exam-list" class="exam-grid">
+                <!-- Sınavlar buraya yüklenecek -->
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>Henüz Sınav Yok</h3>
+                <p>İlk sınavınızı oluşturmak için "Yeni Sınav Oluştur" butonuna tıklayın.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Yeni Sınav Modal -->
+    <div id="exam-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Yeni Sınav Oluştur</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="exam-form">
+                <div class="form-group">
+                    <label>Sınav Adı</label>
+                    <input type="text" id="exam-name" required placeholder="Örn: Matematik 1. Sınav">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sınav Tarihi</label>
+                        <input type="date" id="exam-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Soru Sayısı</label>
+                        <input type="number" id="question-count" min="1" max="100" value="20" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Doğru Puanı</label>
+                        <input type="number" id="correct-points" step="0.25" value="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Yanlış Puanı</label>
+                        <input type="number" id="wrong-points" step="0.25" value="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Boş Puanı</label>
+                    <input type="number" id="empty-points" step="0.25" value="0" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">
+                    <i class="fas fa-save"></i> Sınav Oluştur
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let teacher = null;
+
+        // Auth check
+        async function checkAuth() {
+            const stored = localStorage.getItem('teacher');
+            if (!stored) {
+                window.location.href = 'login.html';
+                return;
+            }
+            teacher = JSON.parse(stored);
+            document.getElementById('teacher-name').textContent = teacher.fullName || teacher.name || 'Öğretmen';
+        }
+
+        function logout() {
+            fetch('/api/logout', { method: 'POST' });
+            localStorage.removeItem('teacher');
+            window.location.href = 'login.html';
+        }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('exam-modal').classList.add('active');
+            document.getElementById('exam-date').valueAsDate = new Date();
+        }
+
+        function closeModal() {
+            document.getElementById('exam-modal').classList.remove('active');
+            document.getElementById('exam-form').reset();
+        }
+
+        // Load exams
+        async function loadExams() {
+            try {
+                const response = await fetch('/api/exams');
+                const data = await response.json();
+                
+                const examList = document.getElementById('exam-list');
+                const emptyState = document.getElementById('empty-state');
+                
+                if (!data.exams || data.exams.length === 0) {
+                    examList.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+                
+                emptyState.style.display = 'none';
+                examList.innerHTML = data.exams.map(exam => `
+                    <div class="exam-card">
+                        <div class="exam-header">
+                            <div class="exam-name">${exam.exam_name}</div>
+                            <span class="exam-status status-${exam.status}">${getStatusText(exam.status)}</span>
+                        </div>
+                        <div class="exam-meta">
+                            <span><i class="fas fa-calendar"></i> ${new Date(exam.exam_date).toLocaleDateString('tr-TR')}</span>
+                            <span><i class="fas fa-question-circle"></i> ${exam.question_count} Soru</span>
+                            <span><i class="fas fa-users"></i> ${exam.student_count || 0} Öğrenci</span>
+                        </div>
+                        <div class="exam-actions">
+                            <a href="answer-key.html?examId=${exam.id}" class="btn-sm btn-secondary-sm">
+                                <i class="fas fa-key"></i> Cevap Anahtarı
+                            </a>
+                            <a href="scan.html?examId=${exam.id}" class="btn-sm btn-primary-sm">
+                                <i class="fas fa-camera"></i> Optik Oku
+                            </a>
+                            <a href="results.html?examId=${exam.id}" class="btn-sm btn-secondary-sm">
+                                <i class="fas fa-chart-bar"></i> Sonuçlar
+                            </a>
+                            <button class="btn-sm btn-danger-sm" onclick="deleteExam(${exam.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading exams:', error);
+            }
+        }
+
+        function getStatusText(status) {
+            const map = { active: 'Aktif', inactive: 'Pasif', completed: 'Tamamlandı' };
+            return map[status] || status;
+        }
+
+        // Create exam
+        document.getElementById('exam-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const examData = {
+                examName: document.getElementById('exam-name').value,
+                examDate: document.getElementById('exam-date').value,
+                questionCount: parseInt(document.getElementById('question-count').value),
+                correctPoints: parseFloat(document.getElementById('correct-points').value),
+                wrongPoints: parseFloat(document.getElementById('wrong-points').value),
+                emptyPoints: parseFloat(document.getElementById('empty-points').value),
+                teacherId: teacher?.id || 1
+            };
+            
+            try {
+                const response = await fetch('/api/exams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(examData)
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    closeModal();
+                    loadExams();
+                    // Redirect to answer key page
+                    window.location.href = `answer-key.html?examId=${data.examId}`;
+                }
+            } catch (error) {
+                console.error('Error creating exam:', error);
+                alert('Sınav oluşturulurken hata oluştu!');
+            }
+        });
+
+        // Delete exam
+        async function deleteExam(examId) {
+            if (!confirm('Bu sınavı silmek istediğinize emin misiniz?')) return;
+            
+            try {
+                const response = await fetch(`/api/exams/${examId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadExams();
+                }
+            } catch (error) {
+                console.error('Error deleting exam:', error);
+            }
+        }
+
+        // Close modal on outside click
+        document.getElementById('exam-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'exam-modal') closeModal();
+        });
+
+        // Init
+        checkAuth();
+        loadExams();
+    </script>
+</body>
+</html>

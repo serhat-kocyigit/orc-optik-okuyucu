@@ -1,0 +1,638 @@
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg-dark: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent: #10b981;
+    --danger: #ef4444;
+    --glass: rgba(255, 255, 255, 0.05);
+    --border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    padding: 1.5rem 2rem;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.main-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .main-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 1rem;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.upload-area:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.upload-area.active {
+    border-color: var(--accent);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.upload-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+.btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn:disabled {
+    background: #475569;
+    cursor: not-allowed;
+}
+
+.results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.image-preview-container {
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+    background: #1e293b;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#output-canvas {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.data-table th,
+.data-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.data-table th {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.badge-id {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+}
+
+#loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--glass);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ========== MOBILE RESPONSIVE STYLES ========== */
+
+/* Viewport meta tag için HTML head'e eklenmeli: <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> */
+
+/* Small phones (320px and up) */
+@media (max-width: 480px) {
+    header {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .logo {
+        font-size: 1.1rem;
+    }
+    
+    .main-container {
+        margin: 0.5rem auto;
+        padding: 0 0.5rem;
+        gap: 0.75rem;
+    }
+    
+    .card {
+        padding: 1rem;
+        border-radius: 0.75rem;
+    }
+    
+    .card h3 {
+        font-size: 1rem;
+    }
+    
+    .btn {
+        padding: 0.875rem;
+        font-size: 0.9rem;
+        min-height: 48px; /* Touch-friendly */
+    }
+    
+    .upload-area {
+        padding: 1.5rem 0.75rem;
+    }
+    
+    .upload-area .upload-icon {
+        font-size: 2rem;
+    }
+    
+    .upload-area p {
+        font-size: 0.8rem;
+    }
+    
+    /* Data table mobile scroll */
+    .data-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .data-table {
+        min-width: 500px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Stats grid mobile */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+    }
+    
+    .stat-value {
+        font-size: 1.1rem;
+    }
+    
+    .stat-label {
+        font-size: 0.65rem;
+    }
+    
+    /* Login form mobile */
+    .login-container {
+        padding: 1rem;
+    }
+    
+    .login-form {
+        padding: 1.5rem 1rem;
+    }
+    
+    /* Form inputs mobile */
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    select {
+        padding: 0.875rem;
+        font-size: 16px; /* Prevent zoom on iOS */
+        min-height: 48px;
+    }
+    
+    /* Touch-friendly action buttons */
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+    
+    /* Modal mobile */
+    .modal-content {
+        margin: 1rem;
+        padding: 1rem;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Image preview mobile */
+    .image-preview-container {
+        min-height: 200px;
+        border-radius: 0.75rem;
+    }
+    
+    #output-canvas {
+        max-height: 60vh;
+    }
+    
+    /* Answer key grid mobile */
+    .answer-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.25rem;
+    }
+    
+    .answer-btn {
+        padding: 0.5rem;
+        min-height: 40px;
+        font-size: 0.8rem;
+    }
+    
+    /* Question list mobile */
+    .question-list {
+        max-height: 50vh;
+    }
+    
+    /* Score panel mobile */
+    .score-panel {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .score-item {
+        padding: 0.75rem;
+    }
+    
+    .score-item .value {
+        font-size: 1.5rem;
+    }
+    
+    /* Comparison grid mobile */
+    .result-comparison {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 0.25rem;
+    }
+    
+    .comparison-item {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .comparison-item .q-num {
+        font-size: 0.65rem;
+    }
+    
+    .comparison-item .student-ans,
+    .comparison-item .correct-ans {
+        font-size: 0.75rem;
+    }
+    
+    /* Student info mobile */
+    .student-info {
+        padding: 1rem;
+    }
+    
+    .info-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .info-item .value {
+        font-size: 1.25rem;
+    }
+    
+    /* Exam banner mobile */
+    .exam-banner {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .exam-banner .back-link {
+        justify-content: center;
+    }
+    
+    /* Upload tabs mobile */
+    .upload-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        padding: 0.625rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Camera capture button mobile */
+    .capture-btn {
+        width: 50px;
+        height: 50px;
+        border-width: 3px;
+    }
+    
+    /* No exam warning mobile */
+    .no-exam-warning {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Toast/alert mobile */
+    .alert {
+        margin: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Touch feedback */
+    .btn:active,
+    .answer-btn:active,
+    .tab-btn:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+    
+    /* Scrollbar styling for mobile */
+    ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+    }
+    
+    /* Remove hover effects on touch devices */
+    @media (hover: none) {
+        .btn:hover,
+        .upload-area:hover,
+        .answer-btn:hover {
+            transform: none;
+            background: initial;
+        }
+    }
+}
+
+/* Medium phones and small tablets (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    header {
+        padding: 1rem 1.25rem;
+    }
+    
+    .main-container {
+        margin: 1rem auto;
+        padding: 0 0.75rem;
+    }
+    
+    .card {
+        padding: 1.25rem;
+    }
+    
+    .btn {
+        min-height: 46px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .score-panel {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .answer-grid {
+        grid-template-columns: repeat(10, 1fr);
+    }
+}
+
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .main-container {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Landscape mode specific */
+@media (max-height: 500px) and (orientation: landscape) {
+    header {
+        padding: 0.5rem 1rem;
+    }
+    
+    .main-container {
+        margin: 0.5rem auto;
+    }
+    
+    .card {
+        padding: 0.75rem;
+    }
+    
+    .image-preview-container {
+        min-height: 150px;
+    }
+    
+    #output-canvas {
+        max-height: 50vh;
+    }
+}
+
+/* Safe area insets for notched phones */
+@supports (padding: max(0px)) {
+    header {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+    }
+    
+    .main-container {
+        padding-left: max(0.5rem, env(safe-area-inset-left));
+        padding-right: max(0.5rem, env(safe-area-inset-right));
+    }
+    
+    @media (max-width: 480px) {
+        header {
+            padding-left: max(0.75rem, env(safe-area-inset-left));
+            padding-right: max(0.75rem, env(safe-area-inset-right));
+        }
+    }
+}
+
+/* Dark mode support (already dark, but ensure consistency) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+    }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card {
+        border-width: 2px;
+    }
+    
+    .btn {
+        border-width: 2px;
+    }
+    
+    .upload-area {
+        border-width: 3px;
+    }
+}
