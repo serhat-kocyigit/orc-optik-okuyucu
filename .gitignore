@@ -1,0 +1,8 @@
+node_modules/
+*.pb
+*.pt
+*.bin
+*.log
+.DS_Store
+model/
+temp/

@@ -58,9 +58,9 @@ function setupEventListeners() {
 
     elements.dropZone.onclick = () => elements.fileInput.click();
     elements.fileInput.onchange = (e) => handleFiles(e.target.files);
-    elements.dropZone.ondragover = (e) => { 
-        e.preventDefault(); 
-        elements.dropZone.classList.add('active'); 
+    elements.dropZone.ondragover = (e) => {
+        e.preventDefault();
+        elements.dropZone.classList.add('active');
     };
     elements.dropZone.ondragleave = () => elements.dropZone.classList.remove('active');
     elements.dropZone.ondrop = (e) => {
@@ -143,34 +143,67 @@ async function performAnalysis() {
 
     if (boxes.length === 0) throw new Error("Optik form alanı bulunamadı.");
 
-    // 🔥 EN İYİ BOX SEÇ
-    const best = boxes.sort((a, b) => b.score - a.score)[0];
+    // 🔥 EN YÜKSEK CONFIDENCE'LI BOX'U SEÇ (processImage gibi)
+    let bestConf = 0;
+    let best = null;
+    for (let i = 0; i < boxes.length; i++) {
+        const b = boxes[i];
+        if (b.score > bestConf) {
+            bestConf = b.score;
+            best = b;
+        }
+    }
 
-    // 🔥 SCALE (640 → gerçek boyut)
-    const scale = {
-        x: uploadedImage.width / 640,
-        y: uploadedImage.height / 640
-    };
+    if (!best) throw new Error("Geçerli form alanı bulunamadı.");
 
-    // 🔥 GENİŞLETME (daha stabil crop)
-    const expansionX = (best.w * scale.x) * 0.40;
+    // 🔥 SCALE (640 → gerçek boyut) - processImage ile aynı
+    const xScale = uploadedImage.width / 640;
+    const yScale = uploadedImage.height / 640;
 
-    let ax = Math.max(0, (best.x - best.w / 2) * scale.x - expansionX);
-    let ay = Math.max(0, (best.y - best.h / 2) * scale.y - 20);
-    let aw = (best.w * scale.x) + expansionX * 2.5;
-    let ah = (best.h * scale.y) + 40;
+    // 🔥 DÜZ CROP HESAPLAMA (processImage ile birebir aynı)
+    let startX = Math.max(0, Math.floor((best.x - best.w / 2) * xScale));
+    let startY = Math.max(0, Math.floor((best.y - best.h / 2) * yScale));
+    let w = Math.floor(best.w * xScale);
+    let h = Math.floor(best.h * yScale);
 
-    if (ax + aw > uploadedImage.width) aw = uploadedImage.width - ax - 1;
-    if (ay + ah > uploadedImage.height) ah = uploadedImage.height - ay - 1;
+    // Güvenlik kontrolü - makul değerlerde mi?
+    if (w > uploadedImage.width) w = Math.floor(uploadedImage.width * 0.5);
+    if (h > uploadedImage.height) h = Math.floor(uploadedImage.height * 0.8);
+
+    // 🔥 SOLA GENİŞLET - öğrenci numarası için (AZ)
+    const leftExpand = Math.min(Math.floor(w * 0.6), Math.floor(uploadedImage.width * 0.25)); // Max %25 görüntü genişliği
+    startX = Math.max(0, startX - leftExpand);
+    w = Math.min(w + leftExpand, uploadedImage.width - startX);
 
     const area = {
-        x: Math.floor(ax),
-        y: Math.floor(ay),
-        w: Math.floor(aw),
-        h: Math.floor(ah)
+        x: startX,
+        y: startY,
+        w: w,
+        h: h
     };
+    // ... (Önceki kodların: area objesinin oluşturulduğu yer)
 
-    // =========================
+    // 🔥 AI'nın Seçtiği Alanı Görselleştir (Kırmızı Kesikli Çizgi)
+    // NOT: Görselleştirme CROP sonrası yapılmalı (canvas zaten crop'lu değil)
+    // Crop alanını orijinal canvas üzerinde göster
+    const displayScaleX = elements.canvas.width / uploadedImage.width;
+    const displayScaleY = elements.canvas.height / uploadedImage.height;
+
+    const rx = area.x * displayScaleX;
+    const ry = area.y * displayScaleY;
+    const rw = area.w * displayScaleX;
+    const rh = area.h * displayScaleY;
+
+    ctx.strokeStyle = '#ff0000';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 5]);
+    ctx.strokeRect(rx, ry, rw, rh);
+
+    ctx.fillStyle = '#ff0000';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.setLineDash([]);
+    ctx.fillText(`AI Crop Alanı (%${(best.score * 100).toFixed(1)})`, rx, ry - 10);
+
     // 🔥 OPENCV
     // =========================
     const src = cv.imread(elements.canvas);
@@ -263,9 +296,7 @@ function mapToGrid(ctx, bubbles, area) {
         return { studentID: "-----", answers: [] };
     }
 
-    // =========================
-    // 1. İŞARETLİLER
-    // =========================
+    // 1. İŞARETLİLERİ TESPİT ET
     const marked = bubbles.filter(b => {
         const r = Math.max(2, Math.floor(b.w * 0.28));
         const data = ctx.getImageData(
@@ -289,170 +320,118 @@ function mapToGrid(ctx, bubbles, area) {
             ctx.arc(b.cx, b.cy, b.w / 2 + 2, 0, Math.PI * 2);
             ctx.fill();
         }
-
         return isFilled;
     });
 
-    // =========================
-    // 2. SADECE SORU ALANI
-    // =========================
-    const questionBubbles = bubbles.filter(
-        b => (b.cx - area.x) / area.w > 0.35
-    );
+    const answers = Array.from({ length: 20 }, (_, i) => ({ q: i + 1, ans: null }));
 
-    if (questionBubbles.length < 40) {
-        console.warn("Bubble sayısı düşük");
-    }
+    // 2. SORU ALANINDAKİ BALONCUKLARI BUL VE SATIRLARA GRUPLA
+    const questionBubbles = bubbles.filter(b => (b.cx - area.x) / area.w > 0.35);
 
-    // =========================
-    // 3. X'e göre kolon bul
-    // =========================
-    const sortedX = [...questionBubbles].sort((a, b) => a.cx - b.cx);
-
-    const columns = [];
-    let current = [sortedX[0]];
-    const colThreshold = area.w * 0.03;
-
-    for (let i = 1; i < sortedX.length; i++) {
-        if (Math.abs(sortedX[i].cx - current[0].cx) < colThreshold) {
-            current.push(sortedX[i]);
-        } else {
-            columns.push(current);
-            current = [sortedX[i]];
+    // Satırları Y eksenine göre grupla
+    questionBubbles.sort((a, b) => a.cy - b.cy);
+    const rows = [];
+    if (questionBubbles.length > 0) {
+        let currentRow = [questionBubbles[0]];
+        for (let i = 1; i < questionBubbles.length; i++) {
+            if (Math.abs(questionBubbles[i].cy - currentRow[0].cy) < area.h * 0.04) {
+                currentRow.push(questionBubbles[i]);
+            } else {
+                rows.push(currentRow.sort((a, b) => b.cx - a.cx)); // Satırı SAĞDAN SOLA sırala
+                currentRow = [questionBubbles[i]];
+            }
         }
+        rows.push(currentRow.sort((a, b) => b.cx - a.cx));
     }
-    columns.push(current);
 
-    // sağdan sola sırala (KRİTİK)
-    columns.sort((a, b) => b[0].cx - a[0].cx);
+    // Beklenen 10 satırı işle (1-10 ve 11-20 yan yana)
+    // En üstteki satırlar genellikle başlık vs. olabilir, biz en alttaki 10 satırı baz alalım veya en düzenli olanları.
+    // Ancak genellikle formun geri kalanı temizdir.
+    const validRows = rows.filter(r => r.length >= 10).slice(-10); // En son 10 satır (ana cevap anahtarı)
 
-    // SADECE EN SAĞDAKİ 10 KOLONU AL
-    const selectedCols = columns.slice(0, 10);
+    validRows.forEach((row, rowIndex) => {
+        const qIdx_right = 10 + rowIndex; // 11-20
+        const qIdx_left = rowIndex;       // 1-10
 
-    // tekrar soldan sağa diz
-    selectedCols.sort((a, b) => a[0].cx - b[0].cx);
-
-    const leftCols = selectedCols.slice(0, 5);
-    const rightCols = selectedCols.slice(5, 10);
-
-    // =========================
-    // 4. SONUÇ
-    // =========================
-    const answers = Array.from({ length: 20 }, (_, i) => ({
-        q: i + 1,
-        ans: null
-    }));
-
-    // =========================
-    // 5. SOL KOLON (1–10)
-    // =========================
-    leftCols.forEach((col, colIndex) => {
-        // EN ALTA GÖRE SIRALA
-        col.sort((a, b) => b.cy - a.cy);
-
-        // SADECE EN ALT 10 BALONCUK
-        const bottom10 = col.slice(0, 10);
-
-        bottom10.forEach((b, rowIndex) => {
+        // 1. SAĞ KOLON (11-20) - İlk 5 baloncuk
+        const rightBubbles = row.slice(0, 5);
+        rightBubbles.forEach((b, choiceIdx) => {
             if (marked.includes(b)) {
-                const qIndex = 10 - rowIndex - 1;
+                answers[qIdx_right].ans = OMR_CONFIG.choices[4 - choiceIdx];
+                ctx.strokeStyle = "lime";
+                ctx.strokeRect(b.x, b.y, b.w, b.h);
+            }
+        });
 
-                if (qIndex >= 0 && qIndex < 20) {
-                    answers[qIndex].ans = OMR_CONFIG.choices[colIndex];
-                }
+        // 2. BOŞLUK ANALİZİ (Gelişmiş Gap Detection)
+        // En sağdan itibaren 9 baloncuğun arasındaki mesafeleri ölçüyoruz.
+        let maxGap = 0;
+        let splitIdx = 4; // Default: A2 ile sonrası arası
 
+        const searchLimit = Math.min(row.length - 1, 9);
+        for (let i = 0; i < searchLimit; i++) {
+            const current = row[i];
+            const next = row[i + 1];
+            const currentGap = current.cx - next.cx; // Sağdan sola olduğu için .cx azalıyor
+
+            if (currentGap > maxGap) {
+                maxGap = currentGap;
+                splitIdx = i; // En büyük boşluğun sağındaki baloncuk indeksi
+            }
+        }
+
+        // En büyük boşluğun solundaki baloncuğu (splitIdx + 1) Birinci Kolonun başlangıcı (E) kabul et
+        const col1StartIdx = splitIdx + 1;
+        const leftBubbles = row.slice(col1StartIdx, col1StartIdx + 5);
+
+        leftBubbles.forEach((b, choiceIdx) => {
+            if (marked.includes(b)) {
+                answers[qIdx_left].ans = OMR_CONFIG.choices[4 - choiceIdx];
                 ctx.strokeStyle = "yellow";
                 ctx.strokeRect(b.x, b.y, b.w, b.h);
             }
         });
     });
 
-    // =========================
-    // 6. SAĞ KOLON (11–20)
-    // =========================
-    rightCols.forEach((col, colIndex) => {
-        col.sort((a, b) => b.cy - a.cy);
+    // 3. ÖĞRENCİ NO
+    let studentID = "";
+    const idBubbles = bubbles.filter(b => (b.cx - area.x) / area.w < 0.4);
 
-        const bottom10 = col.slice(0, 10);
-
-        bottom10.forEach((b, rowIndex) => {
-            if (marked.includes(b)) {
-                const qIndex = 10 + (10 - rowIndex - 1);
-
-                if (qIndex >= 0 && qIndex < 20) {
-                    answers[qIndex].ans = OMR_CONFIG.choices[colIndex];
-                }
-
-                ctx.strokeStyle = "lime";
-                ctx.strokeRect(b.x, b.y, b.w, b.h);
+    if (idBubbles.length > 5) {
+        idBubbles.sort((a, b) => a.cx - b.cx);
+        const cols = [];
+        let cur = [idBubbles[0]];
+        for (let i = 1; i < idBubbles.length; i++) {
+            if (Math.abs(idBubbles[i].cx - cur[0].cx) < area.w * 0.02) {
+                cur.push(idBubbles[i]);
+            } else {
+                cols.push(cur);
+                cur = [idBubbles[i]];
             }
-        });
-    });
-
-    // =========================
-// 7. ÖĞRENCİ NO (SOL + EN ALT REFERANS)
-// =========================
-let studentID = "";
-
-const idBubbles = bubbles.filter(
-    b => (b.cx - area.x) / area.w < 0.4
-);
-
-if (idBubbles.length > 5) {
-
-    // SOL → SAĞ sıralama
-    idBubbles.sort((a, b) => a.cx - b.cx);
-
-    // SÜTUNLARA AYIR
-    const cols = [];
-    let cur = [idBubbles[0]];
-
-    for (let i = 1; i < idBubbles.length; i++) {
-        if (Math.abs(idBubbles[i].cx - cur[0].cx) < area.w * 0.02) {
-            cur.push(idBubbles[i]);
-        } else {
-            cols.push(cur);
-            cur = [idBubbles[i]];
         }
-    }
-    cols.push(cur);
+        cols.push(cur);
 
-    // 🔥 SADECE EN SOL 5 SÜTUN
-    const selected = cols.slice(0, 5);
-
-    selected.forEach((col, colIndex) => {
-
-        // 🔥 EN ALT → EN ÜST sırala
-        col.sort((a, b) => b.cy - a.cy);
-
-        // 🔥 SADECE EN ALT 10 BALON
-        const bottom10 = col.slice(0, 10);
-
-        let digit = "-";
-
-        bottom10.forEach((b, i) => {
-            if (marked.includes(b)) {
-                digit = 9-i; // 🔥 EN ALT = 0, yukarı doğru 1,2,3...
-                
-                // debug çiz
-                ctx.strokeStyle = "cyan";
-                ctx.strokeRect(b.x, b.y, b.w, b.h);
-            }
+        const selected = cols.slice(0, 5); // İlk 5 sütun
+        selected.forEach(col => {
+            col.sort((a, b) => a.cy - b.cy); // Üstten alta 0-9
+            let digit = "-";
+            col.forEach((b, i) => {
+                if (marked.includes(b)) {
+                    digit = i;
+                    ctx.strokeStyle = "cyan";
+                    ctx.strokeRect(b.x, b.y, b.w, b.h);
+                }
+            });
+            studentID += digit;
         });
+    }
 
-        studentID += digit;
-    });
-}
-
-return {
-    studentID: studentID || "-----",
-    answers
-};
+    return { studentID: studentID || "-----", answers };
 }
 function displayResults(data) {
     if (elements.resId) elements.resId.innerText = data.studentID;
     if (elements.resCount) elements.resCount.innerText = data.answers.filter(a => a.ans).length + " / 20";
-    
+
     // Bu fonksiyon sayfa tarafından override edilebilir
     if (window.onScanComplete) {
         window.onScanComplete(data);
