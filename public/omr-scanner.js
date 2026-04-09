@@ -270,11 +270,8 @@ async function performAnalysis() {
                 cy
             });
 
-            // 🔥 debug çizim
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
-            ctx.beginPath();
-            ctx.arc(cx, cy, rect.width / 2, 0, Math.PI * 2);
-            ctx.stroke();
+            // Removed generic red stroke debug drawing 
+            // to only show verified bubbles later in the process.
         }
     }
 
@@ -314,19 +311,24 @@ function mapToGrid(ctx, bubbles, area) {
         const avg = bright / (data.length / 4 || 1);
         const isFilled = avg < OMR_CONFIG.fillThreshold;
 
-        if (isFilled) {
-            ctx.fillStyle = 'rgba(34,197,94,0.9)';
-            ctx.beginPath();
-            ctx.arc(b.cx, b.cy, b.w / 2 + 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
         return isFilled;
     });
 
-    const answers = Array.from({ length: 20 }, (_, i) => ({ q: i + 1, ans: null }));
 
-    // 2. SORU ALANINDAKİ BALONCUKLARI BUL VE SATIRLARA GRUPLA
+
+    // 2. MATEMATİKSEL IZGARA (GRID) ANALİZİ
+    // Tüm formdaki baloncuklar arasındaki mesafeleri analiz ederek ideal "adım" (step) değerini bulalım.
+    // Bu değer, A'dan B'ye geçmek için gereken piksel mesafesidir.
     const questionBubbles = bubbles.filter(b => (b.cx - area.x) / area.w > 0.35);
+
+    let allGapsX = [];
+    questionBubbles.sort((a, b) => a.cx - b.cx);
+    for (let i = 0; i < questionBubbles.length - 1; i++) {
+        let g = Math.abs(questionBubbles[i + 1].cx - questionBubbles[i].cx);
+        if (g > 5 && g < area.w * 0.08) allGapsX.push(g);
+    }
+    allGapsX.sort((a, b) => a - b);
+    const globalStepX = allGapsX[Math.floor(allGapsX.length / 2)] || (bubbles[0].w * 1.8);
 
     // Satırları Y eksenine göre grupla
     questionBubbles.sort((a, b) => a.cy - b.cy);
@@ -337,63 +339,94 @@ function mapToGrid(ctx, bubbles, area) {
             if (Math.abs(questionBubbles[i].cy - currentRow[0].cy) < area.h * 0.04) {
                 currentRow.push(questionBubbles[i]);
             } else {
-                rows.push(currentRow.sort((a, b) => b.cx - a.cx)); // Satırı SAĞDAN SOLA sırala
+                rows.push(currentRow.sort((a, b) => b.cx - a.cx)); // Sağdan sola
                 currentRow = [questionBubbles[i]];
             }
         }
         rows.push(currentRow.sort((a, b) => b.cx - a.cx));
     }
 
-    // Beklenen 10 satırı işle (1-10 ve 11-20 yan yana)
-    // En üstteki satırlar genellikle başlık vs. olabilir, biz en alttaki 10 satırı baz alalım veya en düzenli olanları.
-    // Ancak genellikle formun geri kalanı temizdir.
-    const validRows = rows.filter(r => r.length >= 10).slice(-10); // En son 10 satır (ana cevap anahtarı)
+    const answers = Array.from({ length: 20 }, (_, i) => ({ q: i + 1, ans: null }));
+    const validRows = rows.filter(r => r.length >= 8).slice(-10); // En az 8 baloncuk olan 10 satırı al
 
     validRows.forEach((row, rowIndex) => {
-        const qIdx_right = 10 + rowIndex; // 11-20
-        const qIdx_left = rowIndex;       // 1-10
+        const qIdx_right = 10 + rowIndex;
+        const qIdx_left = rowIndex;
 
-        // 1. SAĞ KOLON (11-20) - İlk 5 baloncuk
-        const rightBubbles = row.slice(0, 5);
-        rightBubbles.forEach((b, choiceIdx) => {
-            if (marked.includes(b)) {
-                answers[qIdx_right].ans = OMR_CONFIG.choices[4 - choiceIdx];
-                ctx.strokeStyle = "lime";
-                ctx.strokeRect(b.x, b.y, b.w, b.h);
-            }
-        });
-
-        // 2. BOŞLUK ANALİZİ (Gelişmiş Gap Detection)
-        // En sağdan itibaren 9 baloncuğun arasındaki mesafeleri ölçüyoruz.
+        // Kolon ayrımı (En büyük boşluk)
         let maxGap = 0;
-        let splitIdx = 4; // Default: A2 ile sonrası arası
-
-        const searchLimit = Math.min(row.length - 1, 9);
-        for (let i = 0; i < searchLimit; i++) {
-            const current = row[i];
-            const next = row[i + 1];
-            const currentGap = current.cx - next.cx; // Sağdan sola olduğu için .cx azalıyor
-
-            if (currentGap > maxGap) {
-                maxGap = currentGap;
-                splitIdx = i; // En büyük boşluğun sağındaki baloncuk indeksi
-            }
+        let splitIdx = 4;
+        for (let i = 0; i < Math.min(row.length - 1, 9); i++) {
+            const gap = row[i].cx - row[i + 1].cx;
+            if (gap > maxGap) { maxGap = gap; splitIdx = i; }
         }
 
-        // En büyük boşluğun solundaki baloncuğu (splitIdx + 1) Birinci Kolonun başlangıcı (E) kabul et
-        const col1StartIdx = splitIdx + 1;
-        const leftBubbles = row.slice(col1StartIdx, col1StartIdx + 5);
+        const rightPart = row.slice(0, splitIdx + 1);
+        const leftPart = row.slice(splitIdx + 1);
 
-        leftBubbles.forEach((b, choiceIdx) => {
-            if (marked.includes(b)) {
-                answers[qIdx_left].ans = OMR_CONFIG.choices[4 - choiceIdx];
-                ctx.strokeStyle = "yellow";
-                ctx.strokeRect(b.x, b.y, b.w, b.h);
+        // IZGARA EŞLEŞTİRME FONKSİYONU (Matematiksel Slot Bulma)
+        const mapToSlots = (blockBubbles, count) => {
+            let slots = Array(count).fill(null);
+            if (blockBubbles.length === 0) return slots;
+
+            // En sağdaki baloncuğu referans kabul et (Choice E)
+            let anchorX = blockBubbles[0].cx;
+
+            blockBubbles.forEach(b => {
+                let offset = anchorX - b.cx;
+                let slotIdx = Math.round(offset / globalStepX);
+                if (slotIdx >= 0 && slotIdx < count) {
+                    if (!slots[slotIdx] || Math.abs(offset - slotIdx * globalStepX) < Math.abs(anchorX - slots[slotIdx].cx - slotIdx * globalStepX)) {
+                        slots[slotIdx] = b;
+                    }
+                }
+            });
+            return slots;
+        };
+
+        // SONUÇLARI İŞLEME (Çift işaretleme kontrolü ile)
+        const processResult = (slots, qIdx, color) => {
+            let markedIndices = [];
+            slots.forEach((b, sIdx) => {
+                if (!b) return;
+
+                // Kırmızı halka (Analiz edilen her şık için)
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.arc(b.cx, b.cy, b.w / 2, 0, Math.PI * 2); ctx.stroke();
+
+                if (marked.includes(b)) {
+                    markedIndices.push(sIdx);
+                    // Yeşil Dolgu UI
+                    ctx.fillStyle = 'rgba(34,197,94,0.9)';
+                    ctx.beginPath(); ctx.arc(b.cx, b.cy, b.w / 2 + 2, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = color; ctx.strokeRect(b.x, b.y, b.w, b.h);
+                }
+            });
+
+            // Koordinatları sakla (Sonradan doğru cevapları çizmek için)
+            answers[qIdx].bubbleCoords = slots.map(b => b ? { cx: b.cx, cy: b.cy, w: b.w, h: b.h } : null);
+
+            if (markedIndices.length === 1) {
+                // Tek şık işaretliyse: Doğru kabul et
+                answers[qIdx].ans = OMR_CONFIG.choices[4 - markedIndices[0]];
+            } else if (markedIndices.length > 1) {
+                // Çift şık işaretliyse: Geçersiz say (null) ve kırmızı ile vurgula
+                answers[qIdx].ans = null;
+                markedIndices.forEach(sIdx => {
+                    let b = slots[sIdx];
+                    ctx.strokeStyle = "red";
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(b.x, b.y, b.w, b.h);
+                });
             }
-        });
+        };
+
+        processResult(mapToSlots(rightPart, 5), qIdx_right, "lime");
+        processResult(mapToSlots(leftPart, 5), qIdx_left, "yellow");
     });
 
-    // 3. ÖĞRENCİ NO
+    // 3. ÖĞRENCİ NO (GELİŞMİŞ IZGARA ANALİZİ)
     let studentID = "";
     const idBubbles = bubbles.filter(b => (b.cx - area.x) / area.w < 0.4);
 
@@ -402,24 +435,42 @@ function mapToGrid(ctx, bubbles, area) {
         const cols = [];
         let cur = [idBubbles[0]];
         for (let i = 1; i < idBubbles.length; i++) {
-            if (Math.abs(idBubbles[i].cx - cur[0].cx) < area.w * 0.02) {
-                cur.push(idBubbles[i]);
-            } else {
-                cols.push(cur);
-                cur = [idBubbles[i]];
-            }
+            if (Math.abs(idBubbles[i].cx - cur[0].cx) < area.w * 0.02) cur.push(idBubbles[i]);
+            else { cols.push(cur); cur = [idBubbles[i]]; }
         }
         cols.push(cur);
 
-        const selected = cols.slice(0, 5); // İlk 5 sütun
+        const selected = cols.slice(0, 5);
         selected.forEach(col => {
-            col.sort((a, b) => a.cy - b.cy); // Üstten alta 0-9
+            col.sort((a, b) => a.cy - b.cy);
+
+            // Dikey adım (Y axis step) hesapla
+            let allGapsY = [];
+            for (let i = 0; i < col.length - 1; i++) allGapsY.push(col[i + 1].cy - col[i].cy);
+            allGapsY.sort((a, b) => a - b);
+            let stepY = allGapsY[Math.floor(allGapsY.length / 2)] || (col[0].h * 1.5);
+
             let digit = "-";
-            col.forEach((b, i) => {
+            let anchorY = col[0].cy;
+
+            // Dikey Izgara Eşleştirme (0-9 rakamları için 10 slot)
+            let digitsSlots = Array(10).fill(null);
+            col.forEach(b => {
+                let slotIdx = Math.round((b.cy - anchorY) / stepY);
+                if (slotIdx >= 0 && slotIdx < 10) digitsSlots[slotIdx] = b;
+            });
+
+            digitsSlots.forEach((b, sIdx) => {
+                if (!b) return;
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.arc(b.cx, b.cy, b.w / 2, 0, Math.PI * 2); ctx.stroke();
+
                 if (marked.includes(b)) {
-                    digit = i;
-                    ctx.strokeStyle = "cyan";
-                    ctx.strokeRect(b.x, b.y, b.w, b.h);
+                    digit = sIdx;
+                    ctx.fillStyle = 'rgba(34,197,94,0.9)';
+                    ctx.beginPath(); ctx.arc(b.cx, b.cy, b.w / 2 + 2, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = "cyan"; ctx.strokeRect(b.x, b.y, b.w, b.h);
                 }
             });
             studentID += digit;

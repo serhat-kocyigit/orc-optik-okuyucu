@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
             justify-content: center;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         }
+
         .login-box {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
@@ -26,15 +28,18 @@
             max-width: 400px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+
         .login-logo {
             text-align: center;
             margin-bottom: 2rem;
         }
+
         .login-logo i {
             font-size: 3rem;
             color: var(--primary);
             margin-bottom: 1rem;
         }
+
         .login-logo h1 {
             font-size: 1.5rem;
             font-weight: 700;
@@ -43,30 +48,9 @@
             background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            color: var(--text-main);
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
+
+        /* Global form styles are now used from style.css */
+
         .btn-login {
             width: 100%;
             padding: 1rem;
@@ -79,10 +63,12 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         .btn-login:hover {
             background: var(--primary-hover);
             transform: translateY(-2px);
         }
+
         .error-message {
             background: rgba(239, 68, 68, 0.1);
             color: #ef4444;
@@ -93,6 +79,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <div class="login-box">
@@ -101,9 +88,9 @@
                 <h1>A-VIO OMR Sınav Sistemi</h1>
                 <p style="color: var(--text-muted); margin-top: 0.5rem;">Öğretmen Girişi</p>
             </div>
-            
+
             <div class="error-message" id="error-msg"></div>
-            
+
             <form id="login-form">
                 <div class="form-group">
                     <label>Kullanıcı Adı</label>
@@ -117,7 +104,7 @@
                     <i class="fas fa-sign-in-alt"></i> Giriş Yap
                 </button>
             </form>
-            
+
             <p style="text-align: center; color: var(--text-muted); margin-top: 1.5rem; font-size: 0.875rem;">
                 Varsayılan: teacher / teacher123
             </p>
@@ -127,20 +114,20 @@
     <script>
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error-msg');
-            
+
             try {
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     localStorage.setItem('teacher', JSON.stringify(data.teacher));
                     window.location.href = 'exams.html';
@@ -155,4 +142,5 @@
         });
     </script>
 </body>
+
 </html>

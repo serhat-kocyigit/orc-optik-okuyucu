@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,15 +16,18 @@
             align-items: center;
             margin-bottom: 2rem;
         }
+
         .page-title {
             font-size: 1.75rem;
             font-weight: 700;
         }
+
         .exam-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 1.5rem;
         }
+
         .exam-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -31,30 +35,47 @@
             padding: 1.5rem;
             transition: all 0.2s;
         }
+
         .exam-card:hover {
             border-color: var(--primary);
             transform: translateY(-2px);
         }
+
         .exam-header {
             display: flex;
             justify-content: space-between;
             align-items: start;
             margin-bottom: 1rem;
         }
+
         .exam-name {
             font-size: 1.125rem;
             font-weight: 600;
             color: var(--text-main);
         }
+
         .exam-status {
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
         }
-        .status-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .status-inactive { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-        .status-completed { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .status-completed {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+
         .exam-meta {
             display: flex;
             gap: 1rem;
@@ -62,14 +83,17 @@
             font-size: 0.875rem;
             margin-bottom: 1rem;
         }
+
         .exam-meta i {
             margin-right: 0.25rem;
         }
+
         .exam-actions {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
         }
+
         .btn-sm {
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -82,28 +106,35 @@
             align-items: center;
             gap: 0.5rem;
         }
+
         .btn-primary-sm {
             background: var(--primary);
             color: white;
         }
+
         .btn-primary-sm:hover {
             background: var(--primary-hover);
         }
+
         .btn-secondary-sm {
             background: var(--glass);
             color: var(--text-main);
             border: 1px solid var(--border);
         }
+
         .btn-secondary-sm:hover {
             background: rgba(255, 255, 255, 0.1);
         }
+
         .btn-danger-sm {
             background: rgba(239, 68, 68, 0.2);
             color: #ef4444;
         }
+
         .btn-danger-sm:hover {
             background: rgba(239, 68, 68, 0.3);
         }
+
         .modal {
             display: none;
             position: fixed;
@@ -116,9 +147,11 @@
             align-items: center;
             justify-content: center;
         }
+
         .modal.active {
             display: flex;
         }
+
         .modal-content {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -129,16 +162,19 @@
             max-height: 90vh;
             overflow-y: auto;
         }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
         }
+
         .modal-title {
             font-size: 1.25rem;
             font-weight: 600;
         }
+
         .close-btn {
             background: none;
             border: none;
@@ -146,39 +182,43 @@
             font-size: 1.5rem;
             cursor: pointer;
         }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
+
+
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
             color: var(--text-muted);
         }
+
         .empty-state i {
             font-size: 4rem;
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+
         .user-menu {
             display: flex;
             align-items: center;
             gap: 1rem;
         }
+
         .user-info {
             text-align: right;
         }
+
         .user-name {
             font-weight: 600;
             color: var(--text-main);
         }
+
         .user-role {
             font-size: 0.75rem;
             color: var(--text-muted);
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="logo">
@@ -296,16 +336,16 @@
             try {
                 const response = await fetch('/api/exams');
                 const data = await response.json();
-                
+
                 const examList = document.getElementById('exam-list');
                 const emptyState = document.getElementById('empty-state');
-                
+
                 if (!data.exams || data.exams.length === 0) {
                     examList.innerHTML = '';
                     emptyState.style.display = 'block';
                     return;
                 }
-                
+
                 emptyState.style.display = 'none';
                 examList.innerHTML = data.exams.map(exam => `
                     <div class="exam-card">
@@ -347,7 +387,7 @@
         // Create exam
         document.getElementById('exam-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const examData = {
                 examName: document.getElementById('exam-name').value,
                 examDate: document.getElementById('exam-date').value,
@@ -357,14 +397,14 @@
                 emptyPoints: parseFloat(document.getElementById('empty-points').value),
                 teacherId: teacher?.id || 1
             };
-            
+
             try {
                 const response = await fetch('/api/exams', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(examData)
                 });
-                
+
                 const data = await response.json();
                 if (data.success) {
                     closeModal();
@@ -381,7 +421,7 @@
         // Delete exam
         async function deleteExam(examId) {
             if (!confirm('Bu sınavı silmek istediğinize emin misiniz?')) return;
-            
+
             try {
                 const response = await fetch(`/api/exams/${examId}`, { method: 'DELETE' });
                 if (response.ok) {
@@ -402,4 +442,5 @@
         loadExams();
     </script>
 </body>
+
 </html>

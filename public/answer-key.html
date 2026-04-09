@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
             align-items: center;
             margin-bottom: 2rem;
         }
+
         .exam-info {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -22,40 +24,48 @@
             padding: 1.5rem;
             margin-bottom: 2rem;
         }
+
         .exam-info h2 {
             margin-bottom: 0.5rem;
         }
+
         .exam-info p {
             color: var(--text-muted);
         }
+
         .answer-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
+
         .answer-item {
-            background: var(--glass);
+            background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 0.75rem;
+            border-radius: 1rem;
             padding: 1rem;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 1rem;
         }
+
         .question-num {
             font-weight: 700;
             color: var(--primary);
             min-width: 2rem;
         }
+
         .option-group {
             display: flex;
             gap: 0.5rem;
             flex: 1;
         }
+
         .option-btn {
-            width: 2.5rem;
-            height: 2.5rem;
+            width: 2.25rem;
+            height: 2.25rem;
             border: 2px solid var(--border);
             border-radius: 0.5rem;
             background: transparent;
@@ -63,16 +73,20 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            flex-shrink: 0;
         }
+
         .option-btn:hover {
             border-color: var(--primary);
             color: var(--text-main);
         }
+
         .option-btn.selected {
             background: var(--primary);
             border-color: var(--primary);
             color: white;
         }
+
         .points-input {
             width: 4rem;
             padding: 0.5rem;
@@ -82,6 +96,7 @@
             color: var(--text-main);
             text-align: center;
         }
+
         .actions {
             display: flex;
             gap: 1rem;
@@ -94,37 +109,51 @@
             border: 1px solid var(--border);
             backdrop-filter: blur(10px);
         }
+
         .btn-success {
             background: #10b981;
         }
+
         .btn-success:hover {
             background: #059669;
         }
+
         .btn-warning {
             background: #f59e0b;
         }
+
         .btn-warning:hover {
             background: #d97706;
         }
+
         .bulk-actions {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
             margin-bottom: 2rem;
-            padding: 1rem;
-            background: var(--glass);
-            border-radius: 0.75rem;
+            padding: 1.25rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
             align-items: center;
+            flex-wrap: wrap;
         }
+
         .bulk-actions label {
             color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
         }
-        .bulk-actions select, .bulk-actions input {
-            padding: 0.5rem;
-            background: var(--card-bg);
+
+        .bulk-actions select,
+        .bulk-actions input {
+            padding: 0.5rem 0.75rem;
+            background: var(--glass);
             border: 1px solid var(--border);
             border-radius: 0.5rem;
             color: var(--text-main);
+            font-weight: 600;
         }
+
         .back-link {
             color: var(--text-muted);
             text-decoration: none;
@@ -133,11 +162,13 @@
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
+
         .back-link:hover {
             color: var(--primary);
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="logo">
@@ -215,19 +246,19 @@
             try {
                 const response = await fetch(`/api/exams/${examId}`);
                 const data = await response.json();
-                
+
                 if (!data.success) {
                     alert('Sınav bulunamadı!');
                     window.location.href = 'exams.html';
                     return;
                 }
-                
+
                 exam = data.exam;
                 document.getElementById('exam-name').textContent = exam.exam_name;
-                document.getElementById('exam-details').textContent = 
+                document.getElementById('exam-details').textContent =
                     `${exam.question_count} Soru | Doğru: ${exam.correct_points} puan | Yanlış: ${exam.wrong_points} puan | Boş: ${exam.empty_points} puan`;
                 document.getElementById('scan-link').href = `scan.html?examId=${examId}`;
-                
+
                 // Load existing answer key
                 if (data.answerKeys && data.answerKeys.length > 0) {
                     answers = data.answerKeys.map(ak => ({
@@ -243,7 +274,7 @@
                         points: exam.correct_points
                     }));
                 }
-                
+
                 renderAnswerGrid();
             } catch (error) {
                 console.error('Error loading exam:', error);
@@ -283,12 +314,12 @@
             const option = document.getElementById('bulk-option').value;
             const start = parseInt(document.getElementById('bulk-start').value) || 1;
             const end = parseInt(document.getElementById('bulk-end').value) || exam.question_count;
-            
+
             if (!option) {
                 alert('Lütfen bir cevap seçin!');
                 return;
             }
-            
+
             for (let i = start - 1; i < Math.min(end, answers.length); i++) {
                 answers[i].answer = option;
             }
@@ -317,14 +348,14 @@
                     return;
                 }
             }
-            
+
             try {
                 const response = await fetch(`/api/exams/${examId}/answer-key`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ answers })
                 });
-                
+
                 const data = await response.json();
                 if (data.success) {
                     alert('Cevap anahtarı başarıyla kaydedildi!');
@@ -341,4 +372,5 @@
         loadExam();
     </script>
 </body>
+
 </html>

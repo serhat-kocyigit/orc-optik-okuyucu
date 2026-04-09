@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,10 +18,12 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
+
         .page-title {
             font-size: 1.75rem;
             font-weight: 700;
         }
+
         .exam-info-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -28,36 +31,52 @@
             padding: 1.5rem;
             margin-bottom: 2rem;
         }
+
         .exam-info-card h2 {
             margin-bottom: 0.5rem;
         }
+
         .exam-info-card p {
             color: var(--text-muted);
             margin-bottom: 1rem;
         }
+
         .stats-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
         }
+
         .stat-box {
             background: var(--glass);
             border-radius: 0.75rem;
             padding: 1rem;
             text-align: center;
         }
+
         .stat-box .label {
             font-size: 0.875rem;
             color: var(--text-muted);
             margin-bottom: 0.5rem;
         }
+
         .stat-box .value {
             font-size: 1.5rem;
             font-weight: 700;
         }
-        .stat-box.success .value { color: #10b981; }
-        .stat-box.danger .value { color: #ef4444; }
-        .stat-box.primary .value { color: var(--primary); }
+
+        .stat-box.success .value {
+            color: #10b981;
+        }
+
+        .stat-box.danger .value {
+            color: #ef4444;
+        }
+
+        .stat-box.primary .value {
+            color: var(--primary);
+        }
+
         .results-table {
             width: 100%;
             background: var(--card-bg);
@@ -65,16 +84,19 @@
             border-radius: 1rem;
             overflow: hidden;
         }
+
         .results-table table {
             width: 100%;
             border-collapse: collapse;
         }
+
         .results-table th,
         .results-table td {
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border);
         }
+
         .results-table th {
             background: var(--glass);
             font-weight: 600;
@@ -82,12 +104,15 @@
             font-size: 0.875rem;
             text-transform: uppercase;
         }
+
         .results-table tr:hover {
             background: var(--glass);
         }
+
         .results-table td {
             color: var(--text-main);
         }
+
         .score-badge {
             display: inline-flex;
             align-items: center;
@@ -96,13 +121,27 @@
             border-radius: 0.5rem;
             font-weight: 600;
         }
-        .score-high { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .score-medium { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .score-low { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        .score-high {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .score-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .score-low {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
         .action-btns {
             display: flex;
             gap: 0.5rem;
         }
+
         .btn-sm {
             padding: 0.5rem;
             border-radius: 0.5rem;
@@ -112,13 +151,16 @@
             background: var(--glass);
             color: var(--text-main);
         }
+
         .btn-sm:hover {
             background: var(--primary);
             color: white;
         }
+
         .btn-danger-sm:hover {
             background: #ef4444;
         }
+
         .toolbar {
             display: flex;
             justify-content: space-between;
@@ -127,6 +169,7 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
+
         .search-box {
             display: flex;
             align-items: center;
@@ -136,6 +179,7 @@
             border-radius: 0.75rem;
             padding: 0.5rem 1rem;
         }
+
         .search-box input {
             background: transparent;
             border: none;
@@ -143,19 +187,23 @@
             outline: none;
             width: 200px;
         }
+
         .search-box i {
             color: var(--text-muted);
         }
+
         .empty-state {
             text-align: center;
             padding: 4rem;
             color: var(--text-muted);
         }
+
         .empty-state i {
             font-size: 4rem;
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+
         .back-link {
             color: var(--text-muted);
             text-decoration: none;
@@ -164,9 +212,11 @@
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
+
         .back-link:hover {
             color: var(--primary);
         }
+
         .answer-detail-modal {
             display: none;
             position: fixed;
@@ -179,9 +229,11 @@
             align-items: center;
             justify-content: center;
         }
+
         .answer-detail-modal.active {
             display: flex;
         }
+
         .modal-content {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -192,12 +244,14 @@
             max-height: 80vh;
             overflow-y: auto;
         }
+
         .answer-grid-detail {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 0.5rem;
             margin-top: 1rem;
         }
+
         .answer-item-detail {
             background: var(--glass);
             border: 2px solid var(--border);
@@ -205,16 +259,19 @@
             padding: 0.5rem;
             text-align: center;
         }
+
         .answer-item-detail.correct {
             border-color: #10b981;
             background: rgba(16, 185, 129, 0.1);
         }
+
         .answer-item-detail.wrong {
             border-color: #ef4444;
             background: rgba(239, 68, 68, 0.1);
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="logo">
@@ -222,10 +279,12 @@
             <span>A-VIO OMR</span>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <a href="scan.html?examId=${examId}" id="scan-link" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <a href="scan.html?examId=${examId}" id="scan-link" class="btn-sm"
+                style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
                 <i class="fas fa-camera"></i> Optik Oku
             </a>
-            <a href="exams.html" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <a href="exams.html" class="btn-sm"
+                style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
                 <i class="fas fa-arrow-left"></i> Sınavlara Dön
             </a>
         </div>
@@ -317,7 +376,8 @@
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 id="modal-student-title">Öğrenci Detayı</h3>
-                <button class="close-btn" onclick="closeModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+                <button class="close-btn" onclick="closeModal()"
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
             </div>
             <div id="modal-answers" class="answer-grid-detail"></div>
         </div>
@@ -342,21 +402,21 @@
                 // Load exam details
                 const examResponse = await fetch(`/api/exams/${examId}`);
                 const examData = await examResponse.json();
-                
+
                 if (!examData.success) {
                     alert('Sınav bulunamadı!');
                     window.location.href = 'exams.html';
                     return;
                 }
-                
+
                 exam = examData.exam;
                 answerKey = examData.answerKeys || [];
-                
+
                 document.getElementById('exam-name').textContent = exam.exam_name;
                 document.getElementById('exam-subtitle').textContent = exam.exam_name;
-                document.getElementById('exam-details').textContent = 
+                document.getElementById('exam-details').textContent =
                     `${exam.question_count} Soru | Doğru: ${exam.correct_points}p | Yanlış: ${exam.wrong_points}p | Boş: ${exam.empty_points}p`;
-                
+
                 // Load results
                 await loadResults();
             } catch (error) {
@@ -368,7 +428,7 @@
             try {
                 const response = await fetch(`/api/exams/${examId}/results`);
                 const data = await response.json();
-                
+
                 results = data.results || [];
                 renderResults();
                 updateStats();
@@ -380,19 +440,19 @@
         function renderResults(filtered = results) {
             const tbody = document.getElementById('results-tbody');
             const emptyState = document.getElementById('empty-state');
-            
+
             if (filtered.length === 0) {
                 tbody.innerHTML = '';
                 emptyState.style.display = 'block';
                 return;
             }
-            
+
             emptyState.style.display = 'none';
-            
+
             tbody.innerHTML = filtered.map((result, index) => {
                 const scoreClass = result.total_score >= exam.correct_points * exam.question_count * 0.7 ? 'score-high' :
-                                  result.total_score >= exam.correct_points * exam.question_count * 0.5 ? 'score-medium' : 'score-low';
-                
+                    result.total_score >= exam.correct_points * exam.question_count * 0.5 ? 'score-medium' : 'score-low';
+
                 return `
                     <tr>
                         <td>${index + 1}</td>
@@ -440,7 +500,7 @@
 
         function filterResults() {
             const search = document.getElementById('search-input').value.toLowerCase();
-            const filtered = results.filter(r => 
+            const filtered = results.filter(r =>
                 r.student_number.toLowerCase().includes(search)
             );
             renderResults(filtered);
@@ -448,7 +508,7 @@
 
         async function deleteResult(resultId) {
             if (!confirm('Bu sonucu silmek istediğinize emin misiniz?')) return;
-            
+
             try {
                 const response = await fetch(`/api/results/${resultId}`, { method: 'DELETE' });
                 if (response.ok) {
@@ -463,18 +523,18 @@
             const result = results.find(r => r.id === resultId);
             if (!result) return;
 
-            document.getElementById('modal-student-title').textContent = 
+            document.getElementById('modal-student-title').textContent =
                 `Öğrenci: ${result.student_number} - Puan: ${result.total_score}`;
-            
+
             const answers = JSON.parse(result.answers || '[]');
             const container = document.getElementById('modal-answers');
-            
+
             container.innerHTML = answers.map(ans => {
                 const keyItem = answerKey.find(k => k.question_number === ans.q);
                 const correctAnswer = keyItem ? keyItem.correct_answer : null;
                 const isCorrect = ans.ans === correctAnswer;
                 const hasAnswer = !!ans.ans;
-                
+
                 return `
                     <div class="answer-item-detail ${hasAnswer ? (isCorrect ? 'correct' : 'wrong') : ''}">
                         <div style="font-size: 0.75rem; color: var(--text-muted);">${ans.q}</div>
@@ -504,4 +564,5 @@
         loadExamData();
     </script>
 </body>
+
 </html>
